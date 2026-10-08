@@ -1,5 +1,21 @@
 
-name: Build Custom Oz64 Image
+
+      - name: Build Oz64 Debian image
+        run: |
+          mkdir -p image
+
+          # Confirm the required addon exists
+          test -f scripts/addons/preconfigure/addon.mk
+
+          docker run --privileged --rm \
+            -v "$PWD/configs:/configs" \
+            -v "$PWD/scripts:/builder" \
+            -v "$PWD/image:/output" \
+            ghcr.io/scpcom/sophgo-sg200x-debian:debian \
+            make BOARD=oz64 \
+            SECOND_CPU=arduino \
+            IMAGE_HOSTNAME=oz64-dylan \
+            image
 
 on:
   workflow_dispatch:
