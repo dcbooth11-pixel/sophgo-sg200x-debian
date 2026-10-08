@@ -41,15 +41,17 @@ jobs:
             IMAGE_HOSTNAME=oz64-dylan \
             image
 
-      - name: Compress image
+
+      - name: Verify output
         run: |
           ls -lh image/
-          xz -T2 -1 image/oz64_sd.img
+          test -s image/oz64-e_sd.img.lz4
 
       - name: Upload completed image
         uses: actions/upload-artifact@v4
         with:
           name: oz64-dylan
-          path: image/oz64_sd.img.xz
+          path: image/oz64-e_sd.img.lz4
           if-no-files-found: error
           retention-days: 3
+
