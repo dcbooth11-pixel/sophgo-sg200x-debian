@@ -1,0 +1,55 @@
+
+name: Build Custom Oz64 Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc
+          df -h .
+
+      - name: Enable RISC-V emulation
+        run: |
+          docker run --privileged --rm \
+            tonistiigi/binfmt:qemu-v9.2.2 \
+            --install riscv64
+
+          docker run --rm \
+            --platform linux/riscv64 \
+            debian:trixie uname -m
+
+      - name: Build Oz64 Debian image
+        run: |
+          mkdir -p image
+
+          docker run --privileged --rm \
+            -v "$PWD/configs:/configs" \
+            -v "$PWD/image:/output" \
+            ghcr.io/scpcom/sophgo-sg200x-debian:debian \
+            make BOARD=oz64 \
+            SECOND_CPU=arduino \
+            IMAGE_HOSTNAME=oz64-dylan \
+            image
+
+      - name: Compress image
+        run: |
+          ls -lh image/
+          xz -T2 -1 image/oz64_sd.img
+
+      - name: Upload completed image
+        uses: actions/upload-artifact@v4
+        with:
+          name: oz64-dylan
+          path: image/oz64_sd.img.xz
+          if-no-files-found: error
+          retention-days: 3
