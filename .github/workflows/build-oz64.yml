@@ -1,21 +1,5 @@
 
-
-      - name: Build Oz64 Debian image
-        run: |
-          mkdir -p image
-
-          # Confirm the required addon exists
-          test -f scripts/addons/preconfigure/addon.mk
-
-          docker run --privileged --rm \
-            -v "$PWD/configs:/configs" \
-            -v "$PWD/scripts:/builder" \
-            -v "$PWD/image:/output" \
-            ghcr.io/scpcom/sophgo-sg200x-debian:debian \
-            make BOARD=oz64 \
-            SECOND_CPU=arduino \
-            IMAGE_HOSTNAME=oz64-dylan \
-            image
+name: Build Custom Oz64 Image
 
 on:
   workflow_dispatch:
@@ -48,8 +32,11 @@ jobs:
         run: |
           mkdir -p image
 
+          test -f scripts/addons/preconfigure/addon.mk
+
           docker run --privileged --rm \
             -v "$PWD/configs:/configs" \
+            -v "$PWD/scripts:/builder" \
             -v "$PWD/image:/output" \
             ghcr.io/scpcom/sophgo-sg200x-debian:debian \
             make BOARD=oz64 \
@@ -57,17 +44,15 @@ jobs:
             IMAGE_HOSTNAME=oz64-dylan \
             image
 
-
       - name: Verify output
         run: |
           ls -lh image/
-          test -s image/oz64-e_sd.img.lz4
+          find image -maxdepth 1 -name '*_sd.img*' -size +0c | grep .
 
       - name: Upload completed image
         uses: actions/upload-artifact@v4
         with:
           name: oz64-dylan
-          path: image/oz64-e_sd.img.lz4
+          path: image/*_sd.img*
           if-no-files-found: error
           retention-days: 3
-
